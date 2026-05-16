@@ -33,7 +33,10 @@ services:
       RECKON_DB_DATA_DIR: /app/data
 
     volumes:
-      - ./data:/app/data
+      # Named volume — docker manages permissions; bind-mounting
+      # ./data caused EACCES because docker creates the host dir as
+      # root but the container runs as user `app'.
+      - reckon_gateway_data:/app/data
 
     healthcheck:
       test: ["CMD", "/app/bin/reckon_gateway", "ping"]
@@ -41,3 +44,6 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 3
+
+volumes:
+  reckon_gateway_data:
