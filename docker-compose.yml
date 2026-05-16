@@ -1,0 +1,43 @@
+# reckon-gateway cluster — one node per host.
+#
+# Same compose file deployed to every host (beam00-03 + host00).
+# Per-host values come from env/<host>.env via the HOST env var:
+#
+#   HOST=beam00 docker compose --env-file=.env --env-file=env/beam00.env up -d
+#
+# Or use the deploy-all.sh helper.
+#
+# Critical: `network_mode: host` exposes the BEAM dist + gossip
+# multicast on the host's network stack. Container networking would
+# block multicast on a default bridge.
+
+services:
+  reckon-gateway:
+    image: reckon-gateway:${RECKON_GATEWAY_VERSION:-0.3.0}
+    container_name: reckon-gateway
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      # ── BEAM distribution (per-host overrides from env/<host>.env)
+      NODE_NAME: ${NODE_NAME:?NODE_NAME is required — set in env/<host>.env}
+      RELEASE_COOKIE: ${RELEASE_COOKIE:?RELEASE_COOKIE is required — cluster-wide secret}
+
+      # ── reckon-db cluster discovery (same across all hosts)
+      RECKON_DB_STORE_MODE: cluster
+      RECKON_DB_CLUSTER_PORT: ${RECKON_DB_CLUSTER_PORT:-45892}
+      RECKON_DB_CLUSTER_MULTICAST_ADDR: ${RECKON_DB_CLUSTER_MULTICAST_ADDR:-239.255.0.1}
+      RECKON_DB_CLUSTER_SECRET: ${RECKON_DB_CLUSTER_SECRET:?RECKON_DB_CLUSTER_SECRET is required}
+
+      # ── gRPC + store data
+      RECKON_GATEWAY_PORT: ${RECKON_GATEWAY_PORT:-50051}
+      RECKON_DB_DATA_DIR: /app/data
+
+    volumes:
+      - ./data:/app/data
+
+    healthcheck:
+      test: ["CMD", "/app/bin/reckon_gateway", "ping"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3

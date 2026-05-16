@@ -1,0 +1,6 @@
+.env
+data/
+*.tar
+*.swp
+*~
+.DS_Store
