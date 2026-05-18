@@ -12,6 +12,34 @@ Multi-host deployment shell for a clustered reckon-db. Image: `reckon-gateway:0.
 
 Raft quorum = 3 (tolerates 2 simultaneous failures). All stores in the cluster have their own Ra group spanning these 5 nodes.
 
+### Runtime per host
+
+| Host | IP | Runtime | Notes |
+|---|---|---|---|
+| beam00 | .10 | docker compose | Image build host (no docker on the laptop) |
+| beam01 | .11 | docker compose | |
+| beam02 | .12 | docker compose | |
+| beam03 | .13 | docker compose | Larger NVMe (`/fast`) |
+| host00 | .100 | **podman compose** | Dev laptop; no docker daemon. Image pulled via `ssh rl@beam00 'docker save reckon-gateway:<tag>' \| podman load`. |
+
+Same `docker-compose.yml` is consumed by both runtimes — podman's `podman compose` CLI reads docker-compose syntax. `network_mode: host` works identically on both.
+
+### Bringing up host00 the first time
+
+```bash
+# 1. Load the current gateway image into podman
+ssh rl@beam00.lab "docker save reckon-gateway:0.4.9" | podman load
+
+# 2. Start the stack
+cd ~/work/codeberg.org/reckon-internal/reckon-cluster-compose
+podman compose --env-file=.env --env-file=env/host00.env up -d
+
+# 3. Verify (from any node)
+podman logs reckon-gateway | grep '5-node cluster'
+```
+
+On subsequent gateway version bumps, re-do step 1 + `podman compose ... up -d` (no `down` needed; podman picks up the changed env).
+
 ## Cluster formation
 
 - Gossip: `reckon_db_discovery` broadcasts on `239.255.0.1:45892` every 5s with the shared `RECKON_DB_CLUSTER_SECRET`. On receive, calls `net_kernel:connect_node/1`.
