@@ -4,3 +4,6 @@ data/
 *.swp
 *~
 .DS_Store
+
+# rebar3 build artifacts
+_build/
