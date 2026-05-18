@@ -40,6 +40,26 @@ podman logs reckon-gateway | grep '5-node cluster'
 
 On subsequent gateway version bumps, re-do step 1 + `podman compose ... up -d` (no `down` needed; podman picks up the changed env).
 
+### Auto-start on host00
+
+Rootless podman has no daemon to revive containers on reboot. A systemd `--user` unit handles it. Lingering is already enabled for `rl`.
+
+Unit: `~/.config/systemd/user/reckon-gateway-host00.service` (oneshot wrapping `podman compose up -d` / `down`).
+
+```bash
+# Enable once
+systemctl --user enable --now reckon-gateway-host00.service
+
+# Inspect
+systemctl --user status reckon-gateway-host00.service
+journalctl --user -u reckon-gateway-host00.service -f
+
+# Stop (also stops container)
+systemctl --user stop reckon-gateway-host00.service
+```
+
+On reboot, `default.target` pulls the unit; `podman compose up -d` brings the container back. The compose-level `restart: unless-stopped` covers transient container crashes once the unit is active.
+
 ## Cluster formation
 
 - Gossip: `reckon_db_discovery` broadcasts on `239.255.0.1:45892` every 5s with the shared `RECKON_DB_CLUSTER_SECRET`. On receive, calls `net_kernel:connect_node/1`.

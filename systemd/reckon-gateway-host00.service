@@ -1,0 +1,20 @@
+[Unit]
+Description=reckon-gateway (host00 podman compose stack)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=%h/work/codeberg.org/reckon-internal/reckon-cluster-compose
+ExecStart=/usr/bin/podman compose --env-file=.env --env-file=env/host00.env up -d
+ExecStop=/usr/bin/podman compose --env-file=.env --env-file=env/host00.env down
+TimeoutStartSec=120s
+TimeoutStopSec=60s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=reckon-gateway-host00
+
+[Install]
+WantedBy=default.target
