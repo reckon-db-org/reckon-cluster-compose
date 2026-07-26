@@ -31,7 +31,7 @@ Same `docker-compose.yml` is consumed by both runtimes — podman's `podman comp
 ssh rl@beam00.lab "docker save reckon-gateway:0.4.9" | podman load
 
 # 2. Start the stack
-cd ~/work/codeberg.org/reckon-internal/reckon-cluster-compose
+cd ~/work/github.com/reckon-db-org/reckon-cluster-compose
 podman compose --env-file=.env --env-file=env/host00.env up -d
 
 # 3. Verify (from any node)

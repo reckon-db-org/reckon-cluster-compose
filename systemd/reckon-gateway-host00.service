@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=%h/work/codeberg.org/reckon-internal/reckon-cluster-compose
+WorkingDirectory=%h/work/github.com/reckon-db-org/reckon-cluster-compose
 ExecStart=/usr/bin/podman compose --env-file=.env --env-file=env/host00.env up -d
 ExecStop=/usr/bin/podman compose --env-file=.env --env-file=env/host00.env down
 TimeoutStartSec=120s
