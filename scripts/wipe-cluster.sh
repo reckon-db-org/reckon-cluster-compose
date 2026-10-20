@@ -55,8 +55,11 @@ echo "==> Stop gateway on every node"
 bash "${SCRIPT_DIR}/deploy-beams.sh" down
 
 if $HOST00; then
-    ( cd "${COMPOSE_DIR}" && \
-        podman compose --env-file=.env --env-file=env/host00.env down 2>&1 | \
+    # The `cd` is its own statement so a missing directory fails the run
+    # instead of being swallowed by the `|| true` that keeps grep's no-match
+    # exit from failing it.
+    ( cd "${COMPOSE_DIR}" || exit 1
+      podman compose --env-file=.env --env-file=env/host00.env down 2>&1 | \
         grep -E 'Stopping|Stopped|Removed|Removing|Error' || true )
 fi
 
@@ -89,8 +92,10 @@ echo "==> Start gateway on every node"
 bash "${SCRIPT_DIR}/deploy-beams.sh" up
 
 if $HOST00; then
-    ( cd "${COMPOSE_DIR}" && \
-        podman compose --env-file=.env --env-file=env/host00.env up -d 2>&1 | \
+    # Same shape as the stop above: a failed `cd` is a failed run, not a
+    # command whose output grep found nothing in.
+    ( cd "${COMPOSE_DIR}" || exit 1
+      podman compose --env-file=.env --env-file=env/host00.env up -d 2>&1 | \
         grep -E 'Creating|Created|Starting|Started|Error' || true )
 fi
 
