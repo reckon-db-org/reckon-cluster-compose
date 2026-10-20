@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Deploy reckon-cluster-compose to every host: rsync the dir, point
 # at the right per-host env, bring up the container.
 #
@@ -37,12 +36,15 @@ run_remote() {
 
     case "${ACTION}" in
         up)
+            # shellcheck disable=SC2029  # ${target} and ${host_key} are this host's rsync destination and env file, computed locally by this script
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${host_key}.env up -d"
             ;;
         down)
+            # shellcheck disable=SC2029  # same local ${target} as the up case, so the remote side is told a path this machine worked out
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${host_key}.env down"
             ;;
         restart)
+            # shellcheck disable=SC2029  # same local ${target}; the remote side only has to run the two literals it is given
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${host_key}.env down && docker compose --env-file=.env --env-file=env/${host_key}.env up -d"
             ;;
         *)

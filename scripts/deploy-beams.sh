@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Deploy reckon-cluster-compose to beam00..03 only (skip host00).
 # Used when the dev laptop has no docker daemon, so we can't run the
 # host00 step of deploy-all.sh.
@@ -24,12 +23,15 @@ for host in "${HOSTS[@]}"; do
         "${COMPOSE_DIR}/" "rl@${host}:${target}/"
     case "$ACTION" in
         up)
+            # shellcheck disable=SC2029  # ${target} and ${key} are computed locally, one rsync destination and env file per beam
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${key}.env up -d"
             ;;
         down)
+            # shellcheck disable=SC2029  # same locally computed ${target}; the beam is only told where to run compose
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${key}.env down"
             ;;
         restart)
+            # shellcheck disable=SC2029  # same local ${target}, and the remote shell expands nothing: both paths arrive resolved
             ssh "rl@${host}" "cd ${target} && docker compose --env-file=.env --env-file=env/${key}.env down && docker compose --env-file=.env --env-file=env/${key}.env up -d"
             ;;
         *) echo "Unknown action: $ACTION" >&2; exit 2 ;;

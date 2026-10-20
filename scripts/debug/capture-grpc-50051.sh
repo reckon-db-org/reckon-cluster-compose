@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Capture HTTP/2 traffic on port 50051 of a beam node while a gRPC
 # test runs. Bundles ssh+tcpdump+scp into one step.
 #
 # Usage: bash capture-grpc-50051.sh [host] [duration_s] [out_dir]
@@ -31,10 +30,12 @@ REMOTE_PATH="/tmp/${PCAP_NAME}"
 LOCAL_PATH="${OUT_DIR}/${PCAP_NAME}"
 
 echo "==> Capturing on ${HOST} port 50051 for ${DURATION}s"
+# shellcheck disable=SC2029  # the duration and the remote pcap path are this script's arguments, so the remote side just runs tcpdump with them
 ssh "rl@${HOST}" "sudo timeout ${DURATION} tcpdump -i any -nn -s 0 -w ${REMOTE_PATH} 'port 50051' 2>/dev/null || true"
 
 echo "==> Fetching ${REMOTE_PATH} -> ${LOCAL_PATH}"
 scp -q "rl@${HOST}:${REMOTE_PATH}" "${LOCAL_PATH}"
+# shellcheck disable=SC2029  # the same remote path this script just created, so it is resolved here and deleted there
 ssh "rl@${HOST}" "rm -f ${REMOTE_PATH}"
 
 ls -lh "${LOCAL_PATH}"

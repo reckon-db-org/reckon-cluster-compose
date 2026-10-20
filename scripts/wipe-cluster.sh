@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Wipe every node's reckon-db data and start the cluster fresh.
 #
 # Use when you want to reset the cluster from scratch — e.g. after
 # malformed test fixtures have polluted the store with non-compliant
@@ -67,6 +66,7 @@ fi
 echo
 echo "==> Wipe '${STORE}' data in parallel"
 for host in "${BEAMS[@]}"; do
+    # shellcheck disable=SC2029  # ${VOLNAME} and ${STORE} are this script's arguments; \$(hostname) stays for the remote shell
     ssh "rl@${host}" "docker run --rm -v ${VOLNAME}:/d alpine \
         sh -c 'rm -rf /d/${STORE} && echo wiped /d/${STORE} on \$(hostname)'" &
 done

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Distribute a reckon-gateway image tag from one beam node (the
 # "source") to the other beam nodes via `docker save | ssh ... docker load`.
 #
@@ -29,6 +28,7 @@ for h in beam00 beam01 beam02 beam03; do
     fi
 done
 
+# shellcheck disable=SC2029  # the tag is this script's argument, and the source node is asked about exactly it
 if ! ssh "rl@${SRC}" "docker image inspect reckon-gateway:${TAG}" >/dev/null 2>&1; then
     echo "ERROR: reckon-gateway:${TAG} not present on ${SRC}" >&2
     exit 1
@@ -40,6 +40,7 @@ echo "==> Targets: ${PEERS[*]}"
 for peer in "${PEERS[@]}"; do
     echo
     echo "==> ${SRC} -> ${peer}"
+    # shellcheck disable=SC2029  # the tag names the image to save on the source node, so it is resolved here, not there
     ssh "rl@${SRC}" "docker save reckon-gateway:${TAG}" \
         | ssh "rl@${peer}" 'docker load'
 done

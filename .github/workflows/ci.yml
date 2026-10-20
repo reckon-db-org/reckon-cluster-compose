@@ -1,0 +1,70 @@
+name: ci
+
+# Shellcheck and a compose config check on every push to a branch and every pull
+# request.
+#
+# THIS REPOSITORY HAD NO CI. It is the compose file and the scripts that bring up
+# a reckon cluster on the beam boxes: build, distribute, deploy, wipe and rejoin.
+# Nothing checked that either still parses, so a quoting mistake in a script whose
+# job is `wipe-and-rejoin` was found on a beam node.
+#
+# `config --no-interpolate` validates the structure without asking for the values
+# the file interpolates (RELEASE_COOKIE, RECKON_DB_CLUSTER_SECRET, NODE_NAME).
+# Those live outside git by design and differ per host, so a gate that needed
+# them could not run on a pull request. Structure is what this can honestly
+# check.
+#
+# The nineteen shellcheck findings this repository carried are fixed in the same
+# change. Sixteen were SC2029 on `ssh host "...${var}..."`, where the expansion
+# happens on the client on purpose and the remote side is a dumb shell, so those
+# scripts now say so with a directive instead of leaving the reader to guess. The
+# other three were real: an unused variable, a trap that expanded the temporary
+# file name at trap time instead of at exit, and a single-quoted message that
+# means its $HOME literally.
+#
+# On push and pull request, not dispatch-only: the failure mode being prevented
+# is "nobody remembered to run it", and a gate that only runs when someone
+# remembers preserves exactly that condition.
+#
+# `branches: ['**']` IS LOAD-BEARING. A `push` event fires for tag refs as well,
+# so without it this would run a second time on every release tag. `**` matches
+# every branch and excludes tags.
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['**.md']
+  pull_request:
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: shellcheck + compose config
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # shellcheck ships on this image. Every tracked script: these run against
+      # live boxen, where a quoting mistake is a wildcard aimed at the wrong
+      # container or directory.
+      - name: Shellcheck
+        run: shellcheck $(git ls-files '*.sh')
+
+      - name: Compose config
+        run: |
+          set -uo pipefail
+          status=0
+          for f in $(git ls-files 'docker-compose*.yml' 'docker-compose*.yaml' 'compose*.yml' 'compose*.yaml'); do
+            echo "== $f"
+            docker compose -f "$f" config --no-interpolate -q || status=1
+          done
+          exit "$status"

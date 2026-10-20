@@ -25,6 +25,9 @@ mkdir -p "${GOPATH_DIR}/bin"
 chown -R rl:rl "${GOPATH_DIR}"
 
 echo
+# The $HOME here is literal: this line prints what the file below contains, and
+# the file is written in single quotes so the box's shell expands it on login.
+# shellcheck disable=SC2016
 echo '==> /etc/profile.d/go.sh — adds $HOME/go/bin to PATH for login shells'
 cat > /etc/profile.d/go.sh <<'EOF'
 export GOPATH="${HOME}/go"

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Tap port 50051 on beam01 with tcpdump while a subscribe runs from
 # the e2e harness. Confirms whether the server actually sends any
 # HTTP/2 DATA frames after the subscribe, or stays silent past the
 # initial HEADERS frame.
@@ -9,4 +8,5 @@
 set -euo pipefail
 
 DURATION_S="${1:-30}"
+# shellcheck disable=SC2029  # the capture window is this script's argument; the remote side only runs tcpdump for that long
 ssh rl@beam01.lab "sudo timeout ${DURATION_S} tcpdump -i any -nn -X -s 0 'port 50051' 2>&1 | head -200"
